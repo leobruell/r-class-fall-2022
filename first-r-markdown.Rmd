@@ -1,0 +1,103 @@
+---
+title: "Learning RMarkdown"
+author: "Leo"
+date: "September 9, 2022"
+output:
+    html_document:
+        toc: true
+        toc_float:
+            collapsed: false
+            smooth_scroll: true
+        number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, fig.align='center', cache=TRUE)
+
+```
+
+
+# First Section
+
+We start a section with a single # (this is not a comment anymore). A single line of text is treated as one paragraph. 
+
+You make a new a paragraph by leaving a blank line between lines of text. This automatically makes a new paragraph. 
+
+In the RStudio IDE, you can spell check by hitting F7. 
+
+# Subsections
+
+Here we will see how to make subsections
+
+## First Subsection
+
+Two hashtags creates a subsection.
+
+## Another Subsection
+
+We just created a new subsection!
+
+# Lists
+
+There are two main types:
+
+## Unordered lists
+
+- bullet
+- bullet
+- bullet
+    - indent
+    
+## Ordered Lists
+
+1. New York
+    a. coal
+    a. gas
+    a. wood
+1. New Jersey
+    1. gas
+    1. wood
+1. Naples
+1. Detroit
+1. Philadelphia
+1. New Haven
+
+# Formatting 
+
+A _single underscore around_ text makes italics. __bold text__ looks like this with two underscore.
+
+We use `backticks` to create `code looking text`.
+
+# Links
+
+[text](link)
+
+# Using R Code!!!
+
+Create chunk with alt+crl+i
+
+```{r simple-addition}
+#This is a comment inside a code chunk.
+1+1
+```
+```{r make-x}
+x <- 3
+```
+```{r multiply-x}
+x * 3
+```
+```{r ,fig.align='left'}
+y <- rnorm(200) # generates 200 random numbers
+y
+hist(y)
+```
+I want to make a hist with output not code. 
+```{r ,echo=FALSE, fig.cap='A hist'}
+hist(y)
+
+```
+
+```{r , error=TRUE}
+z*2 #If one question is throwing an error, just put errow=TRUE in the code chunk so you can get partial credit on the homework. 
+```
+

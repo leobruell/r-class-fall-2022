@@ -6,7 +6,6 @@
 x <- 2 #main method
 y = 3 #alternative assignment 
 rm(y)
-y
 x + 1
 
 2 > 3
@@ -75,4 +74,5 @@ mean(tomato$Price) #This is missing because there is a value with NA
 mean(tomato$Price, na.rm = TRUE)
 
 ?mean # This pulls up help for function
-
+getwd()
+dir()
