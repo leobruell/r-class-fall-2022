@@ -7,4 +7,5 @@ data/*
 class-datasets/*
 *_cache
 *_files
-
+*.html
+*.Rproj

@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo=TRUE, fig.align='center', cache=TRUE)
 ```
 
 
+
 # First Section
 
 We start a section with a single # (this is not a comment anymore). A single line of text is treated as one paragraph. 
