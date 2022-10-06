@@ -1,0 +1,290 @@
+---
+title: "Assignment 4"
+author: "Leo Bruell"
+date: "Due 10/10/2022"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      error = FALSE)
+## load packages in this chunk here using library() 
+## Best to load ALL necessary packages in this chunk
+## so they are all loaded at the beginning
+
+##
+```
+
+## Intro
+
+Submit your answers as a knitted HTML document with a floating table of contents, showing both code and results. Each question should be its own section. This document has the output format pre-set, so you should get a correctly formatted output document by knitting this R Markdown file. **Turn in the HTML file on Canvas, NOT the R Markdown document!**
+
+Improperly formatted submissions (submitting an Rmd instead of an HTML, or an HTML with a code error such that the document does not render properly, a document where code is not visible) will receive a 50% grade deduction.
+
+Questions where your code returns an error will receive a 50% deduction. Please try your best to make sure your code *runs,* even if you're not sure if the output is correct!
+
+If one chunk is giving you an error and stopping the document from rendering, but the rest of your code works and you need to knit, you can change `error = FALSE` in the setup chunk to `error = TRUE` so that error-producing code chunks will not stop the HTML document from rendering. We recommend not changing this setting unless you really need to render the document with errors included. Most of the time, it's helpful that the HTML document will not render when your code produces an error, because that helps you go back and fix your code.
+
+## Question 1
+
+Read the NYC Pluto data about land value from in Manhattan from https://query.data.world/s/WuYif0WbZCxzOLjLh95TY9rK--Tw64 . Ignore any warnings caused by using `read_csv()`. The data contain characteristic information about individual lots in Manhattan. We want to model the value of lots (`TotalValue`) as a function of its characteristics.
+
+```{r q1-0-load-data}
+# Code that loads data here
+library(readr)
+land_values <- read_csv('https://query.data.world/s/WuYif0WbZCxzOLjLh95TY9rK--Tw64')
+```
+
+### 1.1
+
+First, choose 3 variables in the Pluto data you find interesting. For each of these 3 variables:
+
+- Write 1-2 sentences describing why you picked that variable (you may use data-driven methods or intuition!),
+- Generate and report at least 2 relevant summary statistics of that variable,
+- Show a plot that helps you illustrate the relationship between that variable and `TotalValue`. Choose the type of plot that makes the most sense to you for each variable.
+
+**Variable 1: Lot Area** 
+
+I chose lot area because it seemed likely that lot area would have a strong relationship with value. 
+
+```{r q1-1-1-summary-stats}
+# Code that outputs 2 relevant summary statistics for variable 1 here
+land_values['LotArea'] |> max() #Max
+land_values['LotArea'] |> min() #Min. It is strange that there is a lot with 0 area. It is possible that this is missing data or a mistake. 
+mean(land_values$LotArea) #Mean
+
+
+```
+
+```{r q1-1-1-plot}
+# Code that outputs plot of variable 1 and TotalValue here
+library(ggplot2)
+ggplot(land_values, aes(x=LotArea, y=TotalValue)) + geom_point() + geom_smooth()
+
+
+```
+
+**Variable 2: BldgArea**
+
+I chose BldgArea because, similar to lot area, I thought that the size of the building would have a strong effect on price. 
+
+```{r q1-1-2-summary-stats}
+# Code that outputs 2 relevant summary statistics for variable 2 here
+mean(land_values$BldgArea)
+max(land_values$BldgArea)
+min(land_values$BldgArea)
+
+```
+
+```{r q1-1-2-plot}
+# Code that outputs plot of variable 1 and TotalValue here
+ggplot(land_values, aes(x=BldgArea, y=TotalValue)) + geom_point()
+
+```
+
+**Variable 3: Built**
+
+I picked built because I thought it would be interesting to see if newer buildings are generally more valuable. 
+
+```{r q1-1-3-summary-stats}
+# Code that outputs 2 relevant summary statistics for variable 3 here
+library(dplyr)
+
+land_values |> count(Built, sort=TRUE)
+
+land_values |> group_by(Built) |> 
+    summarise(mean(TotalValue))
+```
+
+```{r q1-1-3-plot}
+# Code that outputs plot of variable 3 and TotalValue here
+built_mean_vals <- land_values |> group_by(Built) |> 
+    summarise(mean_val=mean(TotalValue))
+ggplot(built_mean_vals, aes(x=Built, y=mean_val)) + geom_col()
+
+```
+
+### 1.2
+
+Next, regress `TotalValue` against `FireService`, `LotArea`, `LotFront` and `HistoricDistrict`.
+
+```{r q1-2-regression}
+# Code that fits regression here
+model1 = lm(TotalValue ~ FireService + LotArea + LotFront + HistoricDistrict, data = land_values)
+summary(model1)
+
+```
+
+Use the `coefplot` package to visualize the regression results with a coefficient plot.
+
+```{r q1-2-coefplot}
+# Code that outputs coefplot here
+library(coefplot)
+coefplot(model1, sort='magnitude')
+
+
+```
+
+Interpret each coeﬃcient in your own words (1-2 sentences per coefficient).
+
+**FILL IN BELOW WITH COEFFICIENT INTERPRETATIONS OF THE FOLLOWING VARIABLES**
+
+- Intercept: The intercept can be interpreted as the expected value when all the coefficients are equal to 0. In this case, that would mean a lot with no area or front in a non-historic district served by a fire engine. As this situation would not really occur in the real world, the intercept here has little interpretive value. 
+- `FireService`: The coefficients for fire service (ladder and squad, with engine omitted) demonstrate that there is a high penalty in value when a property is not served by an engine. Additionally, we see that squad service causes a considerably higher reduction in value than ladder service. 
+- `LotArea`: The coefficient is 17.72, which means that increasing lot area by 1 increases expected value by 17.72. 
+- `LotFront`: The coefficient is 16,560, which means than increasing lot front by 1 increase expected value by 16,560.
+- `HistoricDistrict`: The coefficient is 10,022, which means that being in a historic district increased expected value by 10,022. However, this result is not statistically significant at the .05 level. 
+
+###  1.3
+
+Continue adjusting your model on the Pluto data by changing which predictor variables are included in the model until the BIC of the model is below **1,040,000.**
+
+```{r q1-3-refit-model}
+# Code that re-fits model here
+model2 = lm(TotalValue ~ FireService + LotArea + LotFront + Built + BldgArea, data = land_values)
+summary(model2)
+BIC(model1,model2)
+#Here, we see that adding BldgArea and Built while removing HistoricDistrict lowered the BIC to below 1,040,000. 
+
+```
+
+Display the BIC of your final model.
+
+```{r q1-3-report-bic}
+# Code that outputs model BIC here
+print(BIC(model2))
+
+```
+
+Show a `coefplot` coefficient plot of the final model.
+
+```{r q1-3-coefplot}
+# Code that outputs coefplot here
+coefplot(model2, sort='magnitude')
+
+```
+
+Display a coefficient plot, with multiplot, showing the coefficients of both the previous model and this model.
+
+```{r q1-3-multiplot}
+# Code that outputs multiplot here
+multiplot(model1, model2, single = FALSE)
+```
+
+## Question 2
+
+Load the `orings` dataset by downloading the `daag_orings.csv` file from Canvas into the "data" subfolder of your R project folder, and then reading the data into R. The dataset contains information on characteristics of space shuttle launches in the early 1980s, and the number and type of 45 O-ring failures. Investigate whether the temperature at launch has an impact on the probability of O-ring failure using binary (logistic) regression.
+
+```{r q2-0-load-data}
+# Code that loads data here
+space_data <- read_csv('daag_orings.csv')
+space_data |> head()
+```
+
+### 2.1
+
+First, use `mutate()` to create a binary variable indicating whether there is any erosion (`Erosion`) or blow-by (`Blowby`). The variable should be 0 if there is neither erosion nor blow-by for a given O-ring failure, and 1 if there is either erosion or blow-by (or both).
+
+```{r q2-1-create-var}
+# Code that creates new variable here
+space_data <- mutate(space_data, erosion_or_blowby= as.integer( space_data$Erosion > 0 | space_data$Blowby > 0))
+space_data |> head()
+
+```
+
+### 2.2
+
+Next, train a logistic regression where this new variable is the response and `Temperature` is a predictor.
+
+```{r q2-2-fit-model}
+# Code that fits model here
+logmodel1 <- glm(erosion_or_blowby ~ Temperature, data=space_data, family=binomial)
+summary(logmodel1)
+
+```
+
+Does `Temperature` impact the risk of o-ring failure positively, negatively, or not at all? Write 1-2 sentences interpreting the result of your regression.
+
+Increasing the temperature reduces the risk of o-ring failure. However, the p-value is only significant at the .05 level. 
+
+## Question 3
+
+Load the `DoctorAUS` dataset from the `Ecdat` package. The dataset contains information on Australians' doctor visits from 1977-78. We want to model the number of doctor visits per person (`doctorco`) as a function of other health-related predictor variable(s).
+
+```{r q3-0-load-data}
+# Code that loads data here
+data(DoctorAUS, package="Ecdat")
+DoctorAUS |> dim()
+mean(DoctorAUS$doctorco)
+```
+
+
+### 3.1
+
+Use Poisson regression to model `doctorco` as a function of 1-5 variables of your choice (more is not necessarily better!).
+
+```{r q3-1-fit-model}
+# Code that fits model here
+doctormodel1 <- glm(doctorco ~ age, data=DoctorAUS, family=poisson)
+doctormodel2 <- glm(doctorco ~ age + hospadmi + illness + hscore + prescrib, data=DoctorAUS, family=poisson)
+
+
+BIC(doctormodel1, doctormodel2)
+
+```
+
+Write 1-2 sentences describing why you picked each of those variables. 
+
+**age:** I picked age because I thought age could be related to doctor's visits, with older people being more likely to need to see a doctor. 
+
+**hospadmi:** I picked hospital admissions because I thought that people who have been admitted to the hospital would be more likely to need to see a doctor again for follow-up treatment. Additionally, hopstial admissions in the last year could also be a proxy for overall health, and less healthy people would generally need to see a doctor more. 
+
+**illness:** I picked illness because people who are feeling sick would probably be more likely to see a doctor than those who are not. 
+
+**hscore**: I picked health score because I thought that healthier people would be less likely to visit a doctor. 
+
+**prescrib:** I picked number of prescriptions because I thought that people who have more prescription medications would need to go to doctors more frequently to get their medications prescribed and follow-up on their treatments. 
+
+Report the BIC of your model.
+
+```{r q3-1-report-bic}
+# Code that outputs model BIC here
+print(BIC(doctormodel2))
+
+```
+
+Display a coefficient plot _on the original scale of the data_ by setting the `trans` argument of `coefplot()` to the appropriate inverse function. This requires reading (AS YET UN-NUMBERED TEXTBOOK SECTION).
+
+```{r q3-1-coefplot}
+# Code that outputs coefplot here
+coefplot(doctormodel2, sort='magnitude', trans=exp)
+
+```
+
+### 3.2
+
+Model the number of doctor visits as a function of your variables of choice again, this time accounting for overdispersion by using a quasipoisson family.
+
+```{r q3-2-fit-new-model}
+# Code to fit new model here
+qp_model1 <- glm(doctorco ~ age + hospadmi + illness + hscore + prescrib, data=DoctorAUS, family=quasipoisson)
+
+```
+
+Report the overdispersion parameter of your new model.
+
+```{r q3-2-report-overdispersion}
+# Code that prints out model overdispersion parameter here
+summary(qp_model1)
+#The model dispersion parameter 1.579285. 
+```
+
+Display a multiplot of the previous model and this one.
+
+```{r q4-2-multiplot}
+# Code that outputs multiplot here
+multiplot(doctormodel2, qp_model1)
+```
